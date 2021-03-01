@@ -14,8 +14,15 @@ public func configure(_ app: Application) throws {
         password: Environment.get("DATABASE_PASSWORD") ?? "vapor_password",
         database: Environment.get("DATABASE_NAME") ?? "vapor_database"
     ), as: .psql)
-
-    app.migrations.add(CreateTodo())
+    
+    // Add CreateAcronym to the list of migrations to run
+    app.migrations.add(CreateAcronym())
+    
+    // Set the log level for the application to debug. This provides more information and enables you to see your migrations.
+    app.logger.logLevel = .debug
+    
+    // Automatically run migrations and wait for the result. Fluent allows you to choose when to run you migrations. This is helpful when you need to schedule them, for example. You can use wait() here since you're not running on an EventLoop
+    try app.autoMigrate().wait()
 
     // register routes
     try routes(app)
