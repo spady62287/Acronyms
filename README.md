@@ -2,7 +2,7 @@
 
 Vapor Web Service That supports Database integration
 
-Following a Server-Side Swift Tutorial from (Ray Wenderlich)[https://www.raywenderlich.com]
+Following a Server-Side Swift Tutorial from [Ray Wenderlich](https://www.raywenderlich.com)
 
 Vapor 4
 Swift 5
