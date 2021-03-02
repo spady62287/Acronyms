@@ -62,4 +62,39 @@ func routes(_ app: Application) throws {
                         .transform(to: .noContent)
                 }
     }
+    // Register a new route handler that accepts a GET request for /api/acronyms/search and returns EventLoopFuture<[Acronym]>
+    app.get("api", "acronyms", "search") { req -> EventLoopFuture<[Acronym]> in
+        // Retireve the search term from the URL query string. If this fails, throw a 400 Bad Request error.
+        guard let searchTerm = req.query[String.self, at: "term"] else {
+            throw Abort(.badRequest)
+        }
+        // Use filter(_:) to find all acronyms whose short property matches the searchTerm. Because this uses key paths, the compiler can enforce type-safety on the properties and filter terms. This prevents run-time issues caused by specifying an invalid column name or invalid type to filter on. Fluent uses the property wrapper's projected value, instead of the value itself.
+        /* This searches the database with the "short" parameter */
+//        return Acronym.query(on: req.db)
+//            .filter(\.$short == searchTerm)
+//            .all()
+        // Create a filter group using the .or relation
+        return Acronym.query(on: req.db).group(.or) { or in
+            // Add a filter to the group to filter for acronyms whose short property matches the search term
+            or.filter(\.$short == searchTerm)
+            // Add a filter to the group to filter for acronyms whose long property matches the search term
+            or.filter(\.$long == searchTerm)
+            // Return all the results
+        }.all()
+    }
+    // Sometimes an application needs only the first result of a query. Creating a specific handler for this ensures the database only returns one result rather than loading all results into memory.
+    app.get("api", "acronyms", "first") { req -> EventLoopFuture<Acronym> in
+        // Perform a query to get the first acronym. first() returns an optional as there may be no acronyms in the database. Use unwrap(or:) to ensure an acronym exists or throw a 404 Not Found error.
+        Acronym.query(on: req.db)
+            .first()
+            .unwrap(or: Abort(.notFound))
+    }
+    // Apps commonly need to sort the results of queries before returning them. for this reason, Fluent provides a sort function.
+    // Register a new HTTP GET route for /api/acronyms/sorted that returns EventLoopFuture<[Acronym]>
+    app.get("api", "acronyms", "sorted") { req -> EventLoopFuture<[Acronym]> in
+        // Create a query for Acronym and use sort(_:_:) to perform the sort. This function takes the key path of the property wrapper's projected value for that field to sort on. It also takes the direction to sort in. Finally use all() to return all the results of the query.
+        Acronym.query(on: req.db)
+            .sort(\.$short, .ascending)
+            .all()
+    }
 }
